@@ -3,15 +3,20 @@ from urllib.parse import urlencode
 from urllib.parse import urlparse
 
 
-WC_STORE_URL= "https://roshel.az/roverland"
-WC_CONSUMER_KEY= "ck_4116194af66bf4d80091b60a226faa391c8d7197"
-WC_CONSUMER_SECRET= "cs_333d5dd5d873f7a5595826517732de7a5d1c9429"
+WC_STORE_URL_TEST= "https://roshel.az/roverland"
+WC_CONSUMER_KEY_TEST= "ck_4116194af66bf4d80091b60a226faa391c8d7197"
+WC_CONSUMER_SECRET_TEST= "cs_333d5dd5d873f7a5595826517732de7a5d1c9429"
 
+WC_CONSUMER_KEY_PROD = "ck_b31d454694883481517f89f8981a3580537be5fc"
+WC_CONSUMER_SECRET_PROD = "cs_6a7990739f059ce07a4b87b1f6b22437f2451ca5"
+WC_STORE_URL_PROD = "https://roverland.az"
+
+#  can@roshel.az	
 class WooCommerceClient:
     def __init__(self):
-        self.base_url = f"{WC_STORE_URL}/wp-json/wc/v3"
-        self.auth = aiohttp.BasicAuth(WC_CONSUMER_KEY, WC_CONSUMER_SECRET)
-        self.wp_media_url = f"{WC_STORE_URL}/wp-json/wp/v2/media"
+        self.base_url = f"{WC_STORE_URL_PROD}/wp-json/wc/v3"
+        self.auth = aiohttp.BasicAuth(WC_CONSUMER_KEY_PROD, WC_CONSUMER_SECRET_PROD)
+        self.wp_media_url = f"{WC_STORE_URL_PROD}/wp-json/wp/v2/media"
 
 
     async def upload_media(self, image_url):
@@ -32,9 +37,12 @@ class WooCommerceClient:
                 print(f"Uploading image: {filename}")
 
                 # Upload to WordPress media library
-                username = "canilgu@roshel.az"        # The WP username
-                app_password = "3VVJ Ox3z 6Lrc cZHU MX5z VW7s"   # The 24-char application password
+                username_test = "canilgu@roshel.az"        # The WP username
+                app_password_test = "3VVJ Ox3z 6Lrc cZHU MX5z VW7s"   # The 24-char application password
 
+                username = "can@roshel.az"
+                app_password = "gFyY UoWl vRaq aGoo M8YR yM1O"
+                
                 auth_str = f"{username}:{app_password}"
                 b64_auth = base64.b64encode(auth_str.encode()).decode()
                 headers = {

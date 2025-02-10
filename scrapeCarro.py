@@ -1,11 +1,8 @@
-import asyncio
-import aiohttp
-import requests
-from aiohttp import ClientSession
-from bs4 import BeautifulSoup
-import json
-import re
+import asyncio, aiohttp, requests
+import json, re
 from googletrans import Translator
+from bs4 import BeautifulSoup
+from aiohttp import ClientSession
 
 
 # Initialize global translator
@@ -43,13 +40,13 @@ def extract_products_from_soup(soup: BeautifulSoup) -> list:
         # Product price (ru)
         price_block = product.find('div', class_='price-main')
         if price_block:
-            price_ru_raw = price_block.get_text(strip=True)
+            if price_block.find('span'):
+                price_ru_raw = price_block.find('span').get_text(strip=True)
+            else:
+                price_ru_raw = price_block.get_text(strip=True)
         else:
             price_ru_raw = ""
 
-
-
-        
         # For images
         imgs = product.find('div',class_='media').find_all('div', class_='d-none')
         product_photo_url = []
@@ -63,6 +60,8 @@ def extract_products_from_soup(soup: BeautifulSoup) -> list:
 
         # Clean up the price text (e.g. "53 BYN" -> "53 BYN")
         product_price_ru = re.sub(r'\s+', ' ', price_ru_raw)
+        
+        print(product_price_ru)
 
         products_data.append({
             "product_name_ru": product_name_ru,
@@ -79,7 +78,7 @@ def convert_price(price_str):
     match = re.search(r'([\d\s]+)', price_str)
     if match:
         rub = int(match.group(1).replace(' ', ''))
-        azn = rub *0.0171
+        azn = rub * 0.4991
         azn = azn * 2
         # Format to two decimal places with comma as decimal separator
         return f"{azn:,.2f} AZN".replace(',', ' ').replace('.', ',')
@@ -118,7 +117,7 @@ async def process_product_data(product_data: dict) -> dict:
         "product_photo_url": product_photo_url,
         "product_name_az": product_name_az,
         "product_price_az": product_price_az,
-        "product_href": product_data["product_href"]
+        "product_href": "https://carro.by" + product_data["product_href"]
     }
 
 async def scrape_page(session: ClientSession, page_url: str) -> list:
@@ -145,47 +144,49 @@ async def main():
         "https://carro.by/parts/brand_land-rover/model_freelander",
         "https://carro.by/parts/brand_land-rover/model_range-rover-evoque",
         "https://carro.by/parts/brand_land-rover/model_range-rover-velar"
-
     ]
+    
     params = {
         "page": 1,
         "per-page": 30
     }
 
-    all_results = []
-    page_limit = 30
+    #all_results = []
+    page_limit = 35
 
     async with aiohttp.ClientSession() as session:
+        i = 0
+        a = 0
         for base_url in base_url_list:
-            # Construct page URL with current pagination
-            page_url = f"{base_url}?page={params['page']}&per-page={params['per-page']}"
+            all_results = []
+            
+            for i in range(1, page_limit):
 
-            print(f"Scraping page {params['page']}...")
+                # Construct page URL with current pagination
+                page_url = f"{base_url}?page={i}&per-page={params['per-page']}"
 
-            # Scrape current page
-            products_on_page = await scrape_page(session, page_url)
+                print(f"Scraping page {i}...")
 
-            if not products_on_page:
-                print("No more products found or end of pages.")
-                break
+                # Scrape current page
+                products_on_page = await scrape_page(session, page_url)
 
-            all_results.extend(products_on_page)
+                if not products_on_page:
+                    print("No more products found or end of pages.")
+                    break
 
-            # Increment page for next iteration
-            params["page"] += 1
+                all_results.extend(products_on_page)
 
-            # Safety limit if you don't want to scrape too many pages:
-            if params["page"] > page_limit:
-                print("Reached page limit, moving on next category.")
-                continue
+                await asyncio.sleep(4)
 
-            await asyncio.sleep(4)
-
-
-    # Save all results to JSON
-    with open("products_land_rover_carro_new.json", "w+", encoding='utf-8') as f:
-        json.dump(all_results, f, ensure_ascii=False, indent=2)
-    print(f"Saved {len(all_results)} products to products_land_rover.json")
+        
+            # Save all results to JSON
+            with open(f"{a}_carro.json", "w+", encoding='utf-8') as f:
+                json.dump(all_results, f, ensure_ascii=False, indent=2)
+                
+            print(f"Saved {len(all_results)} products to {a}_carro.json")
+            
+            break
+            a += 1
 
 if __name__ == "__main__":
     asyncio.run(main())
