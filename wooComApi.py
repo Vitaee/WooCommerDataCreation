@@ -11,13 +11,19 @@ WC_CONSUMER_KEY_PROD = "ck_b31d454694883481517f89f8981a3580537be5fc"
 WC_CONSUMER_SECRET_PROD = "cs_6a7990739f059ce07a4b87b1f6b22437f2451ca5"
 WC_STORE_URL_PROD = "https://roverland.az"
 
-#  can@roshel.az	
+
 class WooCommerceClient:
     def __init__(self):
         self.base_url = f"{WC_STORE_URL_PROD}/wp-json/wc/v3"
         self.auth = aiohttp.BasicAuth(WC_CONSUMER_KEY_PROD, WC_CONSUMER_SECRET_PROD)
         self.wp_media_url = f"{WC_STORE_URL_PROD}/wp-json/wp/v2/media"
 
+        self.timeout =  aiohttp.ClientTimeout(
+            total=120,  # Total timeout (in seconds)
+            connect=90,  # Connection timeout (in seconds)
+            sock_connect=90,  # Socket connection timeout (in seconds)
+            sock_read=90  # Socket read timeout (in seconds)
+        )
 
     async def upload_media(self, image_url):
         """Upload image to  media library and return media ID"""
@@ -41,9 +47,11 @@ class WooCommerceClient:
                 app_password_test = "3VVJ Ox3z 6Lrc cZHU MX5z VW7s"   # The 24-char application password
 
                 username = "can@roshel.az"
-                app_password = "gFyY UoWl vRaq aGoo M8YR yM1O"
+                #app_password = "gFyY UoWl vRaq aGoo M8YR yM1O"
+                app_password = "xVki HQku CEkJ rNsY a71S yD8a"
                 
                 auth_str = f"{username}:{app_password}"
+                
                 b64_auth = base64.b64encode(auth_str.encode()).decode()
                 headers = {
                     "Content-Disposition": f'attachment; filename="{filename}"',
@@ -57,6 +65,7 @@ class WooCommerceClient:
                     self.wp_media_url,
                     data=image_data,
                     headers=headers,
+                    timeout = self.timeout
                 ) as resp:
                     resp.raise_for_status()
                     media_data = await resp.json()
@@ -80,7 +89,7 @@ class WooCommerceClient:
 
        
         url = f"{self.base_url}/products"
-        async with aiohttp.ClientSession(auth=self.auth) as session:
+        async with aiohttp.ClientSession(auth=self.auth, timeout=self.timeout) as session:
             async with session.post(url, json=data) as resp:
                 resp.raise_for_status()
                 return await resp.json()
@@ -115,30 +124,11 @@ class WooCommerceClient:
                 return await resp.json()
 
 
-"""
-async def main():
-    #products = await a.get_product(7418)
-    #print(products)
-    wc_client = WooCommerceClient()
-
-    new_product_data = {
-        "name": "New Product Name5",
-        "type": "simple",
-        "regular_price": "21.99",
-        "description": "<p>Thisasdasd is a new product description55.</p>",
-        "short_description": "A123 short description of the product555.",
-        "categories": [{"id": 196}],  # Replace with the actual category ID
-        "images": [{"src": "https://st.carro.su/gallery/version/123/car-part/32834048/148178082/small.jpg"}]
-    }
-    created_product = await wc_client.create_product(new_product_data)
-    print(created_product)
-    """
-
 async def main():
     wc_client = WooCommerceClient()
     
     # Load JSON data
-    with open("products_auro_defender_new.json", "r", encoding="utf-8") as file:
+    with open("0_carro.json", "r", encoding="utf-8") as file:
         products = json.load(file)
     
     for product in products[:2]:
