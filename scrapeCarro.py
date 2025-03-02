@@ -57,17 +57,21 @@ def extract_products_from_soup(soup: BeautifulSoup) -> list:
                     product_photo_url.append(img['data-src'])
                 except: 
                     pass
+        
+        
+       
+        product_code = product.find('div', class_='small').text.strip().replace('Артикул:', ' ')
 
+        
         # Clean up the price text (e.g. "53 BYN" -> "53 BYN")
         product_price_ru = re.sub(r'\s+', ' ', price_ru_raw)
         
-        print(product_price_ru)
-
         products_data.append({
             "product_name_ru": product_name_ru,
             "product_price_ru": product_price_ru,
             "product_photo_url": product_photo_url,
-            "product_href": product_href
+            "product_href": product_href,
+            "product_code": product_code
         })
         
     return products_data
@@ -117,7 +121,8 @@ async def process_product_data(product_data: dict) -> dict:
         "product_photo_url": product_photo_url,
         "product_name_az": product_name_az,
         "product_price_az": product_price_az,
-        "product_href": "https://carro.by" + product_data["product_href"]
+        "product_href": "https://carro.by" + product_data["product_href"],
+        "product_code": product_data["product_code"]
     }
 
 async def scrape_page(session: ClientSession, page_url: str) -> list:
@@ -180,7 +185,7 @@ async def main():
 
         
             # Save all results to JSON
-            with open(f"{a}_carro.json", "w+", encoding='utf-8') as f:
+            with open(f"{a}_withcode_carro.json", "w+", encoding='utf-8') as f:
                 json.dump(all_results, f, ensure_ascii=False, indent=2)
                 
             print(f"Saved {len(all_results)} products to {a}_carro.json")

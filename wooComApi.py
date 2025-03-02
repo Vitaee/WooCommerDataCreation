@@ -19,10 +19,10 @@ class WooCommerceClient:
         self.wp_media_url = f"{WC_STORE_URL_PROD}/wp-json/wp/v2/media"
 
         self.timeout =  aiohttp.ClientTimeout(
-            total=120,  # Total timeout (in seconds)
-            connect=90,  # Connection timeout (in seconds)
-            sock_connect=90,  # Socket connection timeout (in seconds)
-            sock_read=90  # Socket read timeout (in seconds)
+            total=220,  # Total timeout (in seconds)
+            connect=180,  # Connection timeout (in seconds)
+            sock_connect=140,  # Socket connection timeout (in seconds)
+            sock_read=140  # Socket read timeout (in seconds)
         )
 
     async def upload_media(self, image_url):
@@ -80,11 +80,19 @@ class WooCommerceClient:
     async def create_product(self, data):
         if "images" in data:
             new_images = []
+            a = 0
             for img in data["images"]:
+                if a == 4:
+                    break
+                
                 if "src" in img and "id" not in img:
                     media_id = await self.upload_media(img["src"])
                     if media_id:
                         new_images.append({"id": media_id})
+                
+               
+                a += 1
+                
             data["images"] = new_images
 
        
@@ -128,32 +136,38 @@ async def main():
     wc_client = WooCommerceClient()
     
     # Load JSON data
-    with open("0_carro.json", "r", encoding="utf-8") as file:
+    with open("0_withcode_carro.json", "r", encoding="utf-8") as file:
         products = json.load(file)
     
-    for product in products[:2]:
+    for product in products[0:2]:
         product_name = product.get("product_name_az")
         product_price = product.get("product_price_az", "")
         product_photo_url = product.get("product_photo_url")
+        
         
         # Skip products without an image URL
         if not product_photo_url:
             continue
         
+        print(f"Creating product: {product_name}")
+        
         new_product_data = {
             "name": product_name,
             "type": "simple",
             "regular_price": product_price,
-            "description": f"<p>{product_name}</p>",
-            "short_description": f"Qısa təsviri, {product_name}",
+            "description": f"<p>{product_name} - CODE: {product.get('product_code')}</p>",
+            "short_description": f"Qısa təsviri, {product_name} \n orginal url: <a href='{product.get('product_href')}'> link </a> ",
             "categories": [{"id": 196}],  # Replace with the actual category ID
             "images": [{"src": product_photo} for product_photo in product_photo_url]
         }
         
        
-        created_product = await wc_client.create_product(new_product_data)
-        print(f"Created product: {created_product}")
-
+        try:
+            created_product = await wc_client.create_product(new_product_data)
+            print(f"Created product: {created_product}")
+        except:
+            pass
+        
 if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
